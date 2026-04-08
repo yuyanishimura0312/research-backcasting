@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Backcasting Navigator</title>
+<link rel="icon" href="https://esse-sense.com/favicon.ico">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #faf8f5;
+  --panel: #fff;
+  --text: #1a1a1a;
+  --text-muted: #6b635b;
+  --text-secondary: #44403c;
+  --border: #e8e2da;
+  --accent: #783c28;
+  --accent-light: #c87864;
+  --accent-bg: #fdf6f3;
+  --warm: #f3efe9;
+  --score-high: #b45309;
+  --score-mid: #92400e;
+  --score-low: #a8a29e;
+  --green: #166534;
+  --green-bg: #f0fdf4;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 20px;
+}
+h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.stats-bar {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.stat-item {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.stat-item strong {
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+/* Tabs */
+.tabs {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--accent); }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Main */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.control-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.control-group select, .control-group input[type="range"] {
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+}
+.control-group input[type="range"] {
+  width: 100px;
+  accent-color: var(--accent);
+}
+.weight-val {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 28px;
+}
+
+/* Cards / Panels */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.panel-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-domain {
+  background: var(--warm);
+  color: var(--text-secondary);
+}
+.badge-map {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* Score bar */
+.score-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.score-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 60px;
+}
+.score-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--warm);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.score-bar-fill.urgency { background: #dc2626; }
+.score-bar-fill.evidence { background: #2563eb; }
+.score-bar-fill.cross { background: #7c3aed; }
+.score-bar-fill.transform { background: #059669; }
+.score-bar-fill.overall { background: var(--accent); }
+.score-value {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* Overall score badge */
+.overall-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.overall-score.high { background: #fef3c7; color: #92400e; }
+.overall-score.mid { background: #fed7aa; color: #9a3412; }
+.overall-score.low { background: var(--warm); color: var(--text-muted); }
+
+/* Sub-topics */
+.sub-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.sub-topic {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--warm);
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+
+/* Summary pills */
+.summaries {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.summary-item {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 4px;
+  padding-left: 12px;
+  position: relative;
+}
+.summary-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-light);
+}
+
+/* Domain grid */
+.domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+.domain-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.domain-card:hover {
+  border-color: var(--accent-light);
+  box-shadow: 0 2px 12px rgba(120,60,40,0.08);
+}
+.domain-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(120,60,40,0.12);
+}
+.domain-no {
+  font-size: 11px;
+  color: var(--accent-light);
+  font-weight: 700;
+}
+.domain-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.domain-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.domain-score-bar {
+  margin-top: 10px;
+  height: 4px;
+  background: var(--warm);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.domain-score-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+
+/* Matrix view */
+.matrix-container {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.matrix-table th, .matrix-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.matrix-table th {
+  background: var(--warm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  position: sticky;
+  top: 0;
+  min-height: 180px;
+  height: 180px;
+}
+.matrix-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+.matrix-legend {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.matrix-cell {
+  text-align: center;
+  font-weight: 700;
+  cursor: default;
+}
+.matrix-cell.has-theme {
+  cursor: pointer;
+}
+
+/* Timeline */
+.timeline-container {
+  position: relative;
+  padding: 20px 0;
+}
+.timeline-axis {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  margin-bottom: 16px;
+}
+.timeline-year {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.timeline-track {
+  position: relative;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 40px 24px;
+}
+.timeline-now {
+  position: absolute;
+  top: -6px;
+  width: 2px;
+  height: 16px;
+  background: #dc2626;
+}
+.timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.timeline-item-year {
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 50px;
+}
+.timeline-item-name {
+  flex: 1;
+  font-weight: 600;
+}
+.timeline-item-score {
+  font-weight: 700;
+  color: var(--score-high);
+}
+
+/* Backcasting detail panel */
+.backcast-detail {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.backcast-flow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.backcast-node {
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  text-align: center;
+  min-width: 140px;
+}
+.backcast-node.future {
+  background: var(--accent-bg);
+  border-color: var(--accent-light);
+}
+.backcast-node.now {
+  background: var(--green-bg);
+  border-color: #86efac;
+}
+.backcast-node-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.backcast-node-text {
+  font-weight: 700;
+  font-size: 13px;
+}
+.backcast-arrow {
+  color: var(--accent-light);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Weight editor */
+.weight-editor {
+  background: var(--warm);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.weight-editor-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.weight-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.weight-name {
+  font-size: 12px;
+  min-width: 120px;
+  color: var(--text-secondary);
+}
+
+/* Focus indicators */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Domain card dimmed (no themes) */
+.domain-card.dimmed {
+  opacity: 0.55;
+}
+.domain-card.dimmed .domain-name {
+  color: var(--text-muted);
+}
+
+/* Weight total warning */
+.weight-total {
+  font-size: 12px;
+  margin-top: 4px;
+  min-height: 18px;
+}
+.weight-total.warn { color: #dc2626; }
+.weight-total.ok { color: var(--green); }
+
+/* Recalc feedback */
+.recalc-ok {
+  color: var(--green);
+  font-size: 12px;
+  margin-left: 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.recalc-ok.show { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .domain-grid { grid-template-columns: 1fr; }
+  .controls { flex-direction: column; align-items: flex-start; }
+  .backcast-flow { flex-direction: column; }
+  .backcast-arrow { transform: rotate(90deg); }
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { white-space: nowrap; padding: 10px 14px; font-size: 12px; }
+}
+
+/* Section headers */
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+/* Hidden */
+.hidden { display: none !important; }
+
+/* Rank number */
+.rank {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent-light);
+  min-width: 32px;
+}
+
+/* Theme list item */
+.theme-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.theme-item:hover {
+  border-color: var(--accent-light);
+  box-shadow: 0 2px 12px rgba(120,60,40,0.08);
+}
+.theme-content { flex: 1; }
+
+/* Expanded detail */
+.theme-detail {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Filter chips */
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover { border-color: var(--accent-light); }
+.chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Research Backcasting Navigator</h1>
+  <div class="subtitle">
+    未来予測18領域 x 557カード → 研究テーマ抽出 x バックキャスティング重要度評価
+  </div>
+  <div class="stats-bar" id="statsBar"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="ranking">Priority Ranking</div>
+  <div class="tab" data-tab="domains">18 Domains</div>
+  <div class="tab" data-tab="matrix">Domain-Theme Matrix</div>
+  <div class="tab" data-tab="timeline">Timeline</div>
+  <div class="tab" data-tab="settings">Scoring Weights</div>
+</div>
+
+<div class="main">
+  <!-- Ranking Tab -->
+  <div id="tab-ranking" class="tab-content">
+    <div class="controls">
+      <div class="control-group">
+        <label>Sort</label>
+        <select id="sortBy">
+          <option value="backcastingScore">Overall Score</option>
+          <option value="temporalUrgency">Temporal Urgency</option>
+          <option value="evidenceDensity">Evidence Density</option>
+          <option value="crossDomainRelevance">Cross-domain</option>
+          <option value="transformationPotential">Transformation</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Map Theme</label>
+        <select id="filterMap">
+          <option value="">All</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-chips" id="domainChips"></div>
+    <div id="themeList"></div>
+  </div>
+
+  <!-- Domains Tab -->
+  <div id="tab-domains" class="tab-content hidden">
+    <div class="domain-grid" id="domainGrid"></div>
+    <div id="domainDetail" class="hidden" style="margin-top:24px;"></div>
+  </div>
+
+  <!-- Matrix Tab -->
+  <div id="tab-matrix" class="tab-content hidden">
+    <div class="matrix-container" id="matrixContainer"></div>
+  </div>
+
+  <!-- Timeline Tab -->
+  <div id="tab-timeline" class="tab-content hidden">
+    <div id="timelineContent"></div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" class="tab-content hidden">
+    <div class="backcast-detail">
+      <div class="section-title">Backcasting Scoring Method</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.8;">
+        バックキャスティングとは、望ましい未来像を起点として、現在に向かって逆算し、必要な研究領域の重要度を評価する手法です。
+        このシステムでは、未来予測カード557枚のデータから4つの指標でスコアリングを行います。
+      </p>
+
+      <div class="backcast-flow">
+        <div class="backcast-node future">
+          <div class="backcast-node-label">Future Vision</div>
+          <div class="backcast-node-text">未来予測カード<br>557枚の予測</div>
+        </div>
+        <div class="backcast-arrow">&larr;</div>
+        <div class="backcast-node">
+          <div class="backcast-node-label">Target Year</div>
+          <div class="backcast-node-text" id="targetYearDisplay">2035</div>
+        </div>
+        <div class="backcast-arrow">&larr;</div>
+        <div class="backcast-node">
+          <div class="backcast-node-label">Analysis</div>
+          <div class="backcast-node-text">4指標で<br>重要度評価</div>
+        </div>
+        <div class="backcast-arrow">&larr;</div>
+        <div class="backcast-node now">
+          <div class="backcast-node-label">Now (2026)</div>
+          <div class="backcast-node-text">投資すべき<br>研究テーマ</div>
+        </div>
+      </div>
+
+      <div class="weight-editor" style="margin-top:24px;">
+        <div class="weight-editor-title">Scoring Weights (adjust and recalculate)</div>
+        <div class="weight-row">
+          <span class="weight-name">Temporal Urgency</span>
+          <input type="range" id="w-urgency" min="0" max="100" value="30" aria-label="Temporal Urgency weight">
+          <span class="weight-val" id="wv-urgency">30%</span>
+          <span style="font-size:11px;color:var(--text-muted);">予測の実現時期が近いほど高スコア</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-name">Evidence Density</span>
+          <input type="range" id="w-evidence" min="0" max="100" value="25" aria-label="Evidence Density weight">
+          <span class="weight-val" id="wv-evidence">25%</span>
+          <span style="font-size:11px;color:var(--text-muted);">予測カード数が多いほど高スコア</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-name">Cross-domain</span>
+          <input type="range" id="w-cross" min="0" max="100" value="25" aria-label="Cross-domain Relevance weight">
+          <span class="weight-val" id="wv-cross">25%</span>
+          <span style="font-size:11px;color:var(--text-muted);">他領域との関連が多いほど高スコア</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-name">Transformation</span>
+          <input type="range" id="w-transform" min="0" max="100" value="20" aria-label="Transformation Potential weight">
+          <span class="weight-val" id="wv-transform">20%</span>
+          <span style="font-size:11px;color:var(--text-muted);">変革の時間幅・範囲が大きいほど高スコア</span>
+        </div>
+        <div class="weight-total" id="weightTotal"></div>
+        <div style="display:flex;align-items:center;">
+          <button id="recalcBtn" style="margin-top:12px;padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            Recalculate Scores
+          </button>
+          <span class="recalc-ok" id="recalcOk">Recalculated</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+let weights = { urgency: 0.30, evidence: 0.25, cross: 0.25, transform: 0.20 };
+let selectedDomain = null;
+let expandedTheme = null;
+
+// Load data
+fetch('data/research_themes.json')
+  .then(r => r.json())
+  .then(data => {
+    DATA = data;
+    init();
+  });
+
+function init() {
+  renderStats();
+  renderFilterOptions();
+  renderDomainChips();
+  renderThemeList();
+  renderDomainGrid();
+  renderMatrix();
+  renderTimeline();
+  setupTabs();
+  setupWeightControls();
+}
+
+function renderStats() {
+  const bar = document.getElementById('statsBar');
+  const topTheme = DATA.themes[0];
+  bar.innerHTML = `
+    <div class="stat-item"><strong>${DATA.domains.length}</strong>Domains</div>
+    <div class="stat-item"><strong>${DATA.totalThemes}</strong>Research Themes</div>
+    <div class="stat-item"><strong>${DATA.totalCards}</strong>Prediction Cards</div>
+    <div class="stat-item"><strong>19</strong>Source Books</div>
+    <div class="stat-item"><strong>${DATA.targetYear}</strong>Target Year</div>
+  `;
+}
+
+function renderFilterOptions() {
+  const mapFilter = document.getElementById('filterMap');
+  const maps = [...new Set(DATA.domains.map(d => d.mapTheme))];
+  maps.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    mapFilter.appendChild(opt);
+  });
+
+  mapFilter.addEventListener('change', renderThemeList);
+  document.getElementById('sortBy').addEventListener('change', renderThemeList);
+}
+
+function renderDomainChips() {
+  const container = document.getElementById('domainChips');
+  container.innerHTML = '<div class="chip active" data-domain="">All Domains</div>';
+  DATA.domains.forEach(d => {
+    if (d.themeCount > 0) {
+      container.innerHTML += `<div class="chip" data-domain="${d.no}">${d.name}</div>`;
+    }
+  });
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedDomain = chip.dataset.domain ? parseInt(chip.dataset.domain) : null;
+      renderThemeList();
+    });
+  });
+}
+
+function getFilteredThemes() {
+  let themes = [...DATA.themes];
+  const sortBy = document.getElementById('sortBy').value;
+  const mapFilter = document.getElementById('filterMap').value;
+
+  if (selectedDomain) {
+    themes = themes.filter(t => t.domainNo === selectedDomain);
+  }
+  if (mapFilter) {
+    themes = themes.filter(t => t.mapTheme === mapFilter);
+  }
+  themes.sort((a, b) => b[sortBy] - a[sortBy]);
+  return themes;
+}
+
+function renderThemeList() {
+  const container = document.getElementById('themeList');
+  const themes = getFilteredThemes();
+
+  container.innerHTML = themes.map((t, i) => `
+    <div class="theme-item" onclick="toggleThemeDetail(${t.id})">
+      <div class="rank">${i + 1}</div>
+      <div class="overall-score ${t.backcastingScore >= 50 ? 'high' : t.backcastingScore >= 25 ? 'mid' : 'low'}">
+        ${t.backcastingScore}
+      </div>
+      <div class="theme-content">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span class="panel-title">${t.themeName}</span>
+          <span class="badge badge-domain">Domain ${t.domainNo}</span>
+          <span class="badge badge-map">${t.mapTheme}</span>
+        </div>
+        <div class="panel-meta" style="margin-top:4px;">
+          ${t.domainName} / Cards: ${t.cardCount} / ${t.earliestYear}~${t.latestYear}
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Urgency</span>
+          <div class="score-bar"><div class="score-bar-fill urgency" style="width:${t.temporalUrgency}%"></div></div>
+          <span class="score-value">${t.temporalUrgency}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Evidence</span>
+          <div class="score-bar"><div class="score-bar-fill evidence" style="width:${t.evidenceDensity}%"></div></div>
+          <span class="score-value">${t.evidenceDensity}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Cross</span>
+          <div class="score-bar"><div class="score-bar-fill cross" style="width:${t.crossDomainRelevance}%"></div></div>
+          <span class="score-value">${t.crossDomainRelevance}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Transform</span>
+          <div class="score-bar"><div class="score-bar-fill transform" style="width:${t.transformationPotential}%"></div></div>
+          <span class="score-value">${t.transformationPotential}</span>
+        </div>
+        ${t.subTopics.length ? `
+          <div class="sub-topics">
+            ${t.subTopics.map(s => `<span class="sub-topic">${s}</span>`).join('')}
+          </div>
+        ` : ''}
+        <div id="detail-${t.id}" class="${expandedTheme === t.id ? '' : 'hidden'}">
+          <div class="theme-detail">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--text-secondary);">
+              Backcasting Analysis
+            </div>
+            <div class="backcast-flow" style="margin:12px 0;">
+              <div class="backcast-node future">
+                <div class="backcast-node-label">${t.latestYear}</div>
+                <div class="backcast-node-text" style="font-size:11px;">${t.summaries[0] || t.themeName}</div>
+              </div>
+              <div class="backcast-arrow">&larr;</div>
+              <div class="backcast-node">
+                <div class="backcast-node-label">Required by ${t.earliestYear}</div>
+                <div class="backcast-node-text" style="font-size:11px;">${t.themeName}</div>
+              </div>
+              <div class="backcast-arrow">&larr;</div>
+              <div class="backcast-node now">
+                <div class="backcast-node-label">Invest Now</div>
+                <div class="backcast-node-text" style="font-size:11px;">Score: ${t.backcastingScore}</div>
+              </div>
+            </div>
+            ${t.relatedDomains && t.relatedDomains.length ? `
+              <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                Related domains: ${t.relatedDomains.map(d => {
+                  const dom = DATA.domains.find(dd => dd.no === d);
+                  return dom ? dom.name : `#${d}`;
+                }).join(', ')}
+              </div>
+            ` : ''}
+            ${t.sourceBooks.length ? `
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                Sources: ${t.sourceBooks.map(b => DATA.books[b] ? DATA.books[b].title.slice(0, 30) : b).join(' / ')}
+              </div>
+            ` : ''}
+            ${t.summaries.length ? `
+              <div class="summaries">
+                ${t.summaries.map(s => `<div class="summary-item">${s}</div>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleThemeDetail(id) {
+  expandedTheme = expandedTheme === id ? null : id;
+  const el = document.getElementById(`detail-${id}`);
+  if (el) el.classList.toggle('hidden');
+}
+
+function renderDomainGrid() {
+  const grid = document.getElementById('domainGrid');
+  const maxScore = Math.max(...DATA.domains.map(d => d.avgBackcastingScore));
+
+  grid.innerHTML = DATA.domains.map(d => `
+    <div class="domain-card ${d.themeCount === 0 ? 'dimmed' : ''}" data-no="${d.no}" onclick="showDomainDetail(${d.no})">
+      <div class="domain-no">Domain ${d.no} / ${d.mapTheme}</div>
+      <div class="domain-name">${d.name}</div>
+      <div class="domain-stats">
+        <span>Cards: ${d.cardCount}</span>
+        <span>Themes: ${d.themeCount}</span>
+        <span>Avg Score: ${d.avgBackcastingScore}</span>
+      </div>
+      ${d.topTheme ? `<div style="font-size:11px;color:var(--accent);margin-top:6px;">Top: ${d.topTheme} (${d.topThemeScore})</div>` : d.themeCount === 0 ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Research themes not yet extracted</div>` : ''}
+      <div class="domain-score-bar">
+        <div class="domain-score-fill" style="width:${maxScore > 0 ? (d.avgBackcastingScore / maxScore * 100) : 0}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showDomainDetail(no) {
+  const detail = document.getElementById('domainDetail');
+  const domain = DATA.domains.find(d => d.no === no);
+  const themes = DATA.themes.filter(t => t.domainNo === no);
+
+  // Highlight active card
+  document.querySelectorAll('.domain-card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.domain-card[data-no="${no}"]`)?.classList.add('active');
+
+  if (!themes.length) {
+    detail.innerHTML = `<div class="panel"><div class="panel-title">${domain.name}</div><p style="color:var(--text-muted);font-size:13px;margin-top:8px;">This domain has no extracted research themes.</p></div>`;
+    detail.classList.remove('hidden');
+    return;
+  }
+
+  detail.innerHTML = `
+    <div class="section-title">${domain.name} - Research Themes</div>
+    ${themes.sort((a, b) => b.backcastingScore - a.backcastingScore).map(t => `
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">${t.themeName}</div>
+            <div class="panel-meta">${t.earliestYear}~${t.latestYear} / ${t.cardCount} cards</div>
+          </div>
+          <div class="overall-score ${t.backcastingScore >= 50 ? 'high' : t.backcastingScore >= 25 ? 'mid' : 'low'}">
+            ${t.backcastingScore}
+          </div>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Urgency</span>
+          <div class="score-bar"><div class="score-bar-fill urgency" style="width:${t.temporalUrgency}%"></div></div>
+          <span class="score-value">${t.temporalUrgency}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Evidence</span>
+          <div class="score-bar"><div class="score-bar-fill evidence" style="width:${t.evidenceDensity}%"></div></div>
+          <span class="score-value">${t.evidenceDensity}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Cross</span>
+          <div class="score-bar"><div class="score-bar-fill cross" style="width:${t.crossDomainRelevance}%"></div></div>
+          <span class="score-value">${t.crossDomainRelevance}</span>
+        </div>
+        <div class="score-bar-container">
+          <span class="score-label">Transform</span>
+          <div class="score-bar"><div class="score-bar-fill transform" style="width:${t.transformationPotential}%"></div></div>
+          <span class="score-value">${t.transformationPotential}</span>
+        </div>
+        ${t.subTopics.length ? `
+          <div class="sub-topics">
+            ${t.subTopics.map(s => `<span class="sub-topic">${s}</span>`).join('')}
+          </div>
+        ` : ''}
+        ${t.summaries.length ? `
+          <div class="summaries">
+            ${t.summaries.map(s => `<div class="summary-item">${s}</div>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+  `;
+  detail.classList.remove('hidden');
+  detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderMatrix() {
+  const container = document.getElementById('matrixContainer');
+  const domainsWithThemes = DATA.domains.filter(d => d.themeCount > 0);
+  const mapThemes = [...new Set(DATA.domains.map(d => d.mapTheme))];
+
+  // Build matrix: domains (rows) × map themes (columns), cell = avg score
+  let html = '<div class="matrix-legend"><span>Number = Average Score</span><span>~ = Cross-domain link</span><span>- = No relation</span></div>';
+  html += '<table class="matrix-table"><thead><tr><th>Domain</th>';
+  mapThemes.forEach(m => {
+    html += `<th style="writing-mode:vertical-rl;transform:rotate(180deg);max-width:40px;">${m}</th>`;
+  });
+  html += '<th>Avg</th></tr></thead><tbody>';
+
+  domainsWithThemes.forEach(d => {
+    const themes = DATA.themes.filter(t => t.domainNo === d.no);
+    html += `<tr><td style="font-size:11px;font-weight:600;min-width:180px;">${d.name}</td>`;
+    mapThemes.forEach(m => {
+      const matching = themes.filter(t => t.mapTheme === m);
+      if (matching.length) {
+        const avg = Math.round(matching.reduce((s, t) => s + t.backcastingScore, 0) / matching.length);
+        const bg = scoreColor(avg);
+        html += `<td class="matrix-cell has-theme" style="background:${bg};color:#fff;font-size:11px;" title="${matching.map(t=>t.themeName).join(', ')}">${avg}</td>`;
+      } else {
+        // Check cross-domain relevance
+        const relatedThemes = DATA.themes.filter(t =>
+          t.mapTheme === m && t.relatedDomains && t.relatedDomains.includes(d.no)
+        );
+        if (relatedThemes.length) {
+          html += `<td class="matrix-cell" style="background:#f0f0f0;font-size:10px;color:var(--text-muted);" title="Cross-domain link">~</td>`;
+        } else {
+          html += `<td class="matrix-cell" style="color:#ddd;">-</td>`;
+        }
+      }
+    });
+    html += `<td class="matrix-cell" style="font-weight:700;color:var(--accent);">${d.avgBackcastingScore}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function scoreColor(score) {
+  if (score >= 60) return '#b45309';
+  if (score >= 40) return '#d97706';
+  if (score >= 25) return '#92400e';
+  if (score >= 15) return '#a8a29e';
+  return '#d6d3d1';
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timelineContent');
+  const yearGroups = {};
+
+  DATA.themes.forEach(t => {
+    const year = t.earliestYear;
+    if (!yearGroups[year]) yearGroups[year] = [];
+    yearGroups[year].push(t);
+  });
+
+  const years = Object.keys(yearGroups).sort((a, b) => a - b);
+
+  let html = '';
+  years.forEach(year => {
+    const themes = yearGroups[year].sort((a, b) => b.backcastingScore - a.backcastingScore);
+    const yearNum = parseInt(year);
+    const isPast = yearNum <= 2026;
+
+    html += `
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="font-size:20px;font-weight:800;color:${isPast ? '#dc2626' : 'var(--accent)'};">${year}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${isPast ? 'Already emerging' : `${yearNum - 2026} years ahead`}</div>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <div class="timeline-items">
+          ${themes.map(t => `
+            <div class="timeline-item">
+              <div class="timeline-item-year" style="color:${isPast ? '#dc2626' : 'var(--accent)'};">Score ${t.backcastingScore}</div>
+              <div class="timeline-item-name">${t.themeName}</div>
+              <span class="badge badge-domain">${t.domainName}</span>
+              <div style="font-size:11px;color:var(--text-muted);">${t.cardCount} cards</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      tab.classList.add('active');
+      document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+    });
+  });
+}
+
+function updateWeightTotal() {
+  const total = ['urgency','evidence','cross','transform']
+    .reduce((s, id) => s + parseInt(document.getElementById(`w-${id}`).value), 0);
+  const el = document.getElementById('weightTotal');
+  if (total === 100) {
+    el.textContent = `Total: ${total}%`;
+    el.className = 'weight-total ok';
+  } else {
+    el.textContent = `Total: ${total}% (auto-normalized on recalculate)`;
+    el.className = 'weight-total warn';
+  }
+}
+
+function setupWeightControls() {
+  const ids = ['urgency', 'evidence', 'cross', 'transform'];
+  ids.forEach(id => {
+    const slider = document.getElementById(`w-${id}`);
+    const valEl = document.getElementById(`wv-${id}`);
+    slider.addEventListener('input', () => {
+      valEl.textContent = slider.value + '%';
+      updateWeightTotal();
+    });
+  });
+  updateWeightTotal();
+
+  document.getElementById('recalcBtn').addEventListener('click', () => {
+    const raw = {
+      urgency: parseInt(document.getElementById('w-urgency').value),
+      evidence: parseInt(document.getElementById('w-evidence').value),
+      cross: parseInt(document.getElementById('w-cross').value),
+      transform: parseInt(document.getElementById('w-transform').value),
+    };
+    const total = raw.urgency + raw.evidence + raw.cross + raw.transform;
+    if (total === 0) return;
+
+    weights = {
+      urgency: raw.urgency / total,
+      evidence: raw.evidence / total,
+      cross: raw.cross / total,
+      transform: raw.transform / total,
+    };
+
+    // Recalculate scores
+    DATA.themes.forEach(t => {
+      t.backcastingScore = Math.round(
+        t.temporalUrgency * weights.urgency +
+        t.evidenceDensity * weights.evidence +
+        t.crossDomainRelevance * weights.cross +
+        t.transformationPotential * weights.transform
+      );
+    });
+    DATA.themes.sort((a, b) => b.backcastingScore - a.backcastingScore);
+
+    // Update domain averages
+    DATA.domains.forEach(d => {
+      const dThemes = DATA.themes.filter(t => t.domainNo === d.no);
+      d.avgBackcastingScore = dThemes.length ?
+        Math.round(dThemes.reduce((s, t) => s + t.backcastingScore, 0) / dThemes.length) : 0;
+      const top = dThemes.length ? dThemes.reduce((a, b) => a.backcastingScore > b.backcastingScore ? a : b) : null;
+      d.topTheme = top ? top.themeName : '';
+      d.topThemeScore = top ? top.backcastingScore : 0;
+    });
+
+    // Re-render all views
+    renderThemeList();
+    renderDomainGrid();
+    renderMatrix();
+    renderTimeline();
+
+    // Show feedback instead of switching tabs
+    const ok = document.getElementById('recalcOk');
+    ok.classList.add('show');
+    setTimeout(() => ok.classList.remove('show'), 2000);
+  });
+}
+</script>
+</body>
+</html>
