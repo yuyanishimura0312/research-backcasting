@@ -1502,6 +1502,13 @@ function formatAiResponse(text) {
 
 // Initialize API key status on load
 function initAiSettings() {
+  // Auto-set API key from URL hash (one-time, then clear hash)
+  const hash = window.location.hash;
+  if (hash.startsWith('#key=')) {
+    const key = decodeURIComponent(hash.slice(5));
+    localStorage.setItem('anthropic_api_key', key);
+    history.replaceState(null, '', window.location.pathname);
+  }
   updateApiKeyStatus();
   // Allow Enter+Ctrl/Cmd to send
   document.getElementById('aiQuestion')?.addEventListener('keydown', (e) => {
