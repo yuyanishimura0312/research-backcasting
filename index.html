@@ -738,9 +738,9 @@ h1 {
   <!-- AI Analysis Tab -->
   <div id="tab-ai" class="tab-content hidden">
     <div class="backcast-detail">
-      <div class="section-title">AI Research Analysis</div>
+      <div class="section-title">AI Research Analysis - Seed-based Domain Mapping</div>
       <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.8;">
-        研究テーマデータをAIが分析します。質問を入力すると、45の研究テーマ・557枚の未来予測カードのデータを踏まえた回答が得られます。
+        研究シーズ（あなたの研究テーマや関心領域）を入力すると、18領域の未来予測マップ上で関連する領域を特定し、近接する分野との連携可能性を提案します。
       </p>
 
       <div id="aiKeyNotice" style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#92400e;">
@@ -748,18 +748,18 @@ h1 {
       </div>
 
       <div style="margin-bottom:12px;">
-        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">よくある質問テンプレート:</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">分析テンプレート:</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="ai-template-btn" onclick="setAiQuestion('最も優先すべき研究テーマトップ5を、その理由とともに教えてください。')">優先テーマTop5</button>
-          <button class="ai-template-btn" onclick="setAiQuestion('2030年までに最も緊急性が高い研究分野はどれですか？社会的インパクトの観点から分析してください。')">2030年の緊急テーマ</button>
-          <button class="ai-template-btn" onclick="setAiQuestion('クロスドメインの関連性が高いテーマ間のシナジー効果を分析してください。どの組み合わせが最も効果的ですか？')">クロスドメイン分析</button>
-          <button class="ai-template-btn" onclick="setAiQuestion('人類学・社会科学の研究者として、このデータからどのような研究アジェンダを設定すべきですか？')">研究アジェンダ提案</button>
-          <button class="ai-template-btn" onclick="setAiQuestion('小規模組織がこれらの研究テーマに取り組む場合、リソース配分をどう最適化すべきですか？')">リソース配分</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('神経の変化を活かす脳と機械の連携技術について、関連する未来予測領域と連携すべき分野を分析してください。')">脳-機械連携</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('地域コミュニティの持続可能な発展に関する研究シーズについて、未来予測マップ上の位置づけと連携領域を分析してください。')">地域コミュニティ</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('AI倫理と社会的公正に関する研究について、関連する未来予測領域と他分野との連携可能性を提案してください。')">AI倫理・公正</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('フィールドワークに基づく人類学的知見のデジタル化と活用について、未来予測マップでの位置づけと連携提案をお願いします。')">人類学xデジタル</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('再生可能エネルギーと分散型社会インフラの研究について、関連する未来予測領域と連携分野を分析してください。')">再エネ・分散型社会</button>
         </div>
       </div>
 
       <div style="position:relative;">
-        <textarea id="aiQuestion" rows="4" placeholder="研究テーマについて質問を入力してください..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;line-height:1.7;resize:vertical;background:var(--panel);color:var(--text);"></textarea>
+        <textarea id="aiQuestion" rows="4" placeholder="あなたの研究シーズを入力してください（例: 神経科学×リハビリテーション、地域通貨と互助経済、AI倫理と多文化共生...）" style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;line-height:1.7;resize:vertical;background:var(--panel);color:var(--text);"></textarea>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
           <button id="aiClearBtn" onclick="clearAiChat()" style="padding:8px 20px;background:var(--warm);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Clear</button>
           <button id="aiSendBtn" onclick="sendAiQuestion()" style="padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Send</button>
@@ -859,6 +859,29 @@ let weights = { urgency: 0.30, evidence: 0.25, cross: 0.25, transform: 0.20 };
 let selectedDomain = null;
 let expandedTheme = null;
 let aiChatHistory = [];
+
+// Domain proximity map based on MIRA TUKU futurology spatial layout
+// Each domain lists its adjacent/overlapping domains (sharing circle proximity on the map)
+const DOMAIN_PROXIMITY = {
+  1:  { neighbors: [5, 14, 15, 18], cluster: '生態系化する社会', position: 'upper-right' },
+  2:  { neighbors: [12, 14, 5, 16], cluster: '人から新たなヒトへ', position: 'upper-left' },
+  3:  { neighbors: [6, 7, 11, 13], cluster: '閉じる未来', position: 'center-lower' },
+  4:  { neighbors: [6, 7, 3], cluster: '潤沢化する社会 / 生存圏エンジニアリング', position: 'lower-left' },
+  5:  { neighbors: [1, 2, 13, 14, 16], cluster: '身体化する知識', position: 'center' },
+  6:  { neighbors: [3, 4, 7, 13], cluster: '潤沢化する社会', position: 'center-left-lower' },
+  7:  { neighbors: [4, 6, 3], cluster: '生存圏エンジニアリング', position: 'lower-left' },
+  8:  { neighbors: [11, 17], cluster: '危機と格差', position: 'lower-right' },
+  9:  { neighbors: [10, 15, 18], cluster: '価値から意味へ', position: 'right' },
+  10: { neighbors: [9, 11, 18], cluster: '価値から意味へ', position: 'center-right' },
+  11: { neighbors: [3, 8, 10, 17], cluster: '危機と格差 / 閉じる未来', position: 'lower-center-right' },
+  12: { neighbors: [2, 14, 15], cluster: '人から新たなヒトへ', position: 'upper-left' },
+  13: { neighbors: [3, 5, 6, 16], cluster: '生命化する機械', position: 'center-left' },
+  14: { neighbors: [1, 2, 5, 12, 18], cluster: '身体化する知識', position: 'center-upper' },
+  15: { neighbors: [1, 9, 12, 18], cluster: '沸き起こる多様性 / 生態系化する社会', position: 'upper-right' },
+  16: { neighbors: [2, 5, 13], cluster: '生命化する機械', position: 'center-left-upper' },
+  17: { neighbors: [8, 11], cluster: '閉じる未来', position: 'lower-right' },
+  18: { neighbors: [1, 9, 10, 14, 15], cluster: '沸き起こる多様性', position: 'right' },
+};
 
 // Load data
 fetch('data/research_themes.json')
@@ -1342,6 +1365,16 @@ function buildSystemPrompt() {
     `Domain ${d.no}: ${d.name} (${d.mapTheme}) - ${d.cardCount} cards, ${d.themeCount} themes, avg score: ${d.avgBackcastingScore}`
   ).join('\n');
 
+  // Build domain proximity map description
+  const proximityDesc = Object.entries(DOMAIN_PROXIMITY).map(([no, info]) => {
+    const dom = DATA.domains.find(d => d.no === parseInt(no));
+    const neighborNames = info.neighbors.map(n => {
+      const nd = DATA.domains.find(d => d.no === n);
+      return nd ? `${n}.${nd.name}` : `#${n}`;
+    }).join(', ');
+    return `Domain ${no} ${dom ? dom.name : ''} [${info.cluster}] → neighbors: ${neighborNames}`;
+  }).join('\n');
+
   const themeSummary = DATA.themes.map((t, i) =>
     `#${i+1} [Score:${t.backcastingScore}] ${t.themeName} (Domain ${t.domainNo}: ${t.domainName})\n` +
     `  Urgency:${t.temporalUrgency} Evidence:${t.evidenceDensity} Cross:${t.crossDomainRelevance} Transform:${t.transformationPotential}\n` +
@@ -1350,17 +1383,39 @@ function buildSystemPrompt() {
     (t.summaries.length ? `  Summaries: ${t.summaries.join(' / ')}` : '')
   ).join('\n\n');
 
-  return `You are a research strategy analyst specializing in backcasting methodology and foresight analysis.
-You have access to the following dataset from "Research Backcasting Navigator":
-- Source: 19 futurology books, 557 prediction cards across 18 domains
-- Target year: ${DATA.targetYear}
-- ${DATA.totalThemes} research themes scored by 4 backcasting dimensions
+  return `You are a research strategy analyst specializing in backcasting methodology, foresight analysis, and interdisciplinary research collaboration design.
 
-Scoring weights (current):
-- Temporal Urgency: ${Math.round(weights.urgency*100)}% (how soon predictions materialize)
-- Evidence Density: ${Math.round(weights.evidence*100)}% (number of supporting cards)
-- Cross-domain Relevance: ${Math.round(weights.cross*100)}% (links to other domains)
-- Transformation Potential: ${Math.round(weights.transform*100)}% (scope of change)
+You have access to the MIRA TUKU Futurology Map — a spatial arrangement of 18 future prediction domains based on 19 books and 557 prediction cards. The map organizes domains into clusters with spatial proximity indicating thematic relationships.
+
+## YOUR ANALYSIS METHOD (follow this for every seed input):
+
+When the user inputs a research seed (their research theme or interest), perform this structured analysis:
+
+### Step 1: Primary Domain Identification
+Identify 1-3 domains most directly related to the input seed. Explain WHY each domain connects to the seed.
+
+### Step 2: Adjacent Domain Discovery
+Using the DOMAIN PROXIMITY MAP below, identify neighboring domains (distance=1) and second-order neighbors (distance=2) that could provide synergistic connections. The proximity map reflects the spatial layout of the MIRA TUKU futurology map where nearby domains share overlapping thematic circles.
+
+### Step 3: Collaboration Pathways
+For each neighboring domain, propose specific collaboration angles:
+- What research questions emerge at the intersection of the seed and this domain?
+- What prediction cards support this connection?
+- What practical collaboration formats would work? (joint research, workshops, consulting, etc.)
+
+### Step 4: Backcasting Priority Assessment
+Score the seed's relevance using the 4 backcasting dimensions and suggest where to invest effort NOW for maximum future impact.
+
+## DATA
+
+Source: 19 futurology books, 557 prediction cards across 18 domains
+Target year: ${DATA.targetYear}
+${DATA.totalThemes} research themes scored by 4 backcasting dimensions
+
+=== DOMAIN PROXIMITY MAP (spatial adjacency from MIRA TUKU futurology map) ===
+Map clusters: 人から新たなヒトへ / 生態系化する社会 / 沸き起こる多様性 / 生命化する機械 / 身体化する知識 / 価値から意味へ / 潤沢化する社会 / 生存圏エンジニアリング / 閉じる未来 / 危機と格差
+
+${proximityDesc}
 
 === DOMAINS ===
 ${domainSummary}
@@ -1368,12 +1423,21 @@ ${domainSummary}
 === RESEARCH THEMES (ranked by backcasting score) ===
 ${themeSummary}
 
-Instructions:
+## OUTPUT FORMAT
+Always structure your response with clear sections:
+1. **直接関連領域** (Primary Domains) — with connection rationale
+2. **近接領域マップ** (Adjacent Domains) — using the proximity map, show distance-1 and distance-2 neighbors
+3. **連携提案** (Collaboration Pathways) — specific, actionable proposals for each relevant neighbor
+4. **バックキャスティング評価** (Backcasting Assessment) — urgency, evidence, cross-domain, transformation scores
+5. **推奨アクション** (Recommended Actions) — 3 concrete next steps
+
+## RULES
 - Answer in Japanese
-- Base your analysis on the data provided above
-- When citing specific themes, include their score and rank
+- Base analysis on the domain proximity map and research theme data
+- When citing domains, always mention their neighbors from the proximity map
 - Provide actionable insights for a small organization leader / anthropology researcher
-- Be analytical and evidence-based, not vague`;
+- Be specific about WHY domains are connected, not just THAT they are connected
+- Reference specific prediction cards and themes with their scores`;
 }
 
 function setAiQuestion(text) {
@@ -1435,7 +1499,7 @@ async function sendAiQuestion() {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         system: buildSystemPrompt(),
         messages: aiChatHistory
