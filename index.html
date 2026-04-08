@@ -548,6 +548,70 @@ h1 {
   margin-bottom: 16px;
 }
 
+/* AI template buttons */
+.ai-template-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-template-btn:hover {
+  border-color: var(--accent-light);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* AI response */
+.ai-message {
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.ai-message.user {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-light);
+  color: var(--text);
+}
+.ai-message.assistant {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: pre-wrap;
+}
+.ai-message .msg-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.ai-loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
 /* Hidden */
 .hidden { display: none !important; }
 
@@ -626,6 +690,7 @@ h1 {
   <div class="tab" data-tab="domains">18 Domains</div>
   <div class="tab" data-tab="matrix">Domain-Theme Matrix</div>
   <div class="tab" data-tab="timeline">Timeline</div>
+  <div class="tab" data-tab="ai">AI Analysis</div>
   <div class="tab" data-tab="settings">Scoring Weights</div>
 </div>
 
@@ -668,6 +733,42 @@ h1 {
   <!-- Timeline Tab -->
   <div id="tab-timeline" class="tab-content hidden">
     <div id="timelineContent"></div>
+  </div>
+
+  <!-- AI Analysis Tab -->
+  <div id="tab-ai" class="tab-content hidden">
+    <div class="backcast-detail">
+      <div class="section-title">AI Research Analysis</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.8;">
+        研究テーマデータをAIが分析します。質問を入力すると、45の研究テーマ・557枚の未来予測カードのデータを踏まえた回答が得られます。
+      </p>
+
+      <div id="aiKeyNotice" style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#92400e;">
+        APIキーが未設定です。下の「Scoring Weights」タブでAnthropic APIキーを設定してください。
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">よくある質問テンプレート:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="ai-template-btn" onclick="setAiQuestion('最も優先すべき研究テーマトップ5を、その理由とともに教えてください。')">優先テーマTop5</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('2030年までに最も緊急性が高い研究分野はどれですか？社会的インパクトの観点から分析してください。')">2030年の緊急テーマ</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('クロスドメインの関連性が高いテーマ間のシナジー効果を分析してください。どの組み合わせが最も効果的ですか？')">クロスドメイン分析</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('人類学・社会科学の研究者として、このデータからどのような研究アジェンダを設定すべきですか？')">研究アジェンダ提案</button>
+          <button class="ai-template-btn" onclick="setAiQuestion('小規模組織がこれらの研究テーマに取り組む場合、リソース配分をどう最適化すべきですか？')">リソース配分</button>
+        </div>
+      </div>
+
+      <div style="position:relative;">
+        <textarea id="aiQuestion" rows="4" placeholder="研究テーマについて質問を入力してください..." style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;line-height:1.7;resize:vertical;background:var(--panel);color:var(--text);"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button id="aiClearBtn" onclick="clearAiChat()" style="padding:8px 20px;background:var(--warm);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Clear</button>
+          <button id="aiSendBtn" onclick="sendAiQuestion()" style="padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Send</button>
+        </div>
+      </div>
+
+      <div id="aiResponse" style="margin-top:20px;"></div>
+      <div id="aiHistory" style="margin-top:16px;"></div>
+    </div>
   </div>
 
   <!-- Settings Tab -->
@@ -735,6 +836,19 @@ h1 {
           <span class="recalc-ok" id="recalcOk">Recalculated</span>
         </div>
       </div>
+
+      <div class="weight-editor" style="margin-top:24px;">
+        <div class="weight-editor-title">AI Analysis Settings</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+          AI Analysisタブで使用するAnthropic APIキーを設定します。キーはブラウザのlocalStorageに保存され、外部には送信されません（Anthropic APIへの直接通信のみ）。
+        </p>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:monospace;background:var(--panel);color:var(--text);">
+          <button onclick="saveApiKey()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Save</button>
+          <button onclick="clearApiKey()" style="padding:8px 16px;background:var(--warm);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+        </div>
+        <div id="apiKeyStatus" style="font-size:11px;margin-top:6px;color:var(--text-muted);"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -744,6 +858,7 @@ let DATA = null;
 let weights = { urgency: 0.30, evidence: 0.25, cross: 0.25, transform: 0.20 };
 let selectedDomain = null;
 let expandedTheme = null;
+let aiChatHistory = [];
 
 // Load data
 fetch('data/research_themes.json')
@@ -763,6 +878,7 @@ function init() {
   renderTimeline();
   setupTabs();
   setupWeightControls();
+  initAiSettings();
 }
 
 function renderStats() {
@@ -1182,6 +1298,217 @@ function setupWeightControls() {
     const ok = document.getElementById('recalcOk');
     ok.classList.add('show');
     setTimeout(() => ok.classList.remove('show'), 2000);
+  });
+}
+
+// --- AI Analysis ---
+
+function getApiKey() {
+  return localStorage.getItem('anthropic_api_key') || '';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  localStorage.setItem('anthropic_api_key', key);
+  document.getElementById('apiKeyInput').value = '';
+  updateApiKeyStatus();
+}
+
+function clearApiKey() {
+  localStorage.removeItem('anthropic_api_key');
+  document.getElementById('apiKeyInput').value = '';
+  updateApiKeyStatus();
+}
+
+function updateApiKeyStatus() {
+  const key = getApiKey();
+  const statusEl = document.getElementById('apiKeyStatus');
+  const noticeEl = document.getElementById('aiKeyNotice');
+  if (key) {
+    statusEl.textContent = 'APIkey saved (sk-ant-...' + key.slice(-6) + ')';
+    statusEl.style.color = 'var(--green)';
+    if (noticeEl) noticeEl.style.display = 'none';
+  } else {
+    statusEl.textContent = 'Not configured';
+    statusEl.style.color = 'var(--text-muted)';
+    if (noticeEl) noticeEl.style.display = 'block';
+  }
+}
+
+function buildSystemPrompt() {
+  // Build a compact summary of all research data for the AI context
+  const domainSummary = DATA.domains.map(d =>
+    `Domain ${d.no}: ${d.name} (${d.mapTheme}) - ${d.cardCount} cards, ${d.themeCount} themes, avg score: ${d.avgBackcastingScore}`
+  ).join('\n');
+
+  const themeSummary = DATA.themes.map((t, i) =>
+    `#${i+1} [Score:${t.backcastingScore}] ${t.themeName} (Domain ${t.domainNo}: ${t.domainName})\n` +
+    `  Urgency:${t.temporalUrgency} Evidence:${t.evidenceDensity} Cross:${t.crossDomainRelevance} Transform:${t.transformationPotential}\n` +
+    `  Period: ${t.earliestYear}-${t.latestYear}, Cards: ${t.cardCount}\n` +
+    `  Sub-topics: ${t.subTopics.join(', ')}\n` +
+    (t.summaries.length ? `  Summaries: ${t.summaries.join(' / ')}` : '')
+  ).join('\n\n');
+
+  return `You are a research strategy analyst specializing in backcasting methodology and foresight analysis.
+You have access to the following dataset from "Research Backcasting Navigator":
+- Source: 19 futurology books, 557 prediction cards across 18 domains
+- Target year: ${DATA.targetYear}
+- ${DATA.totalThemes} research themes scored by 4 backcasting dimensions
+
+Scoring weights (current):
+- Temporal Urgency: ${Math.round(weights.urgency*100)}% (how soon predictions materialize)
+- Evidence Density: ${Math.round(weights.evidence*100)}% (number of supporting cards)
+- Cross-domain Relevance: ${Math.round(weights.cross*100)}% (links to other domains)
+- Transformation Potential: ${Math.round(weights.transform*100)}% (scope of change)
+
+=== DOMAINS ===
+${domainSummary}
+
+=== RESEARCH THEMES (ranked by backcasting score) ===
+${themeSummary}
+
+Instructions:
+- Answer in Japanese
+- Base your analysis on the data provided above
+- When citing specific themes, include their score and rank
+- Provide actionable insights for a small organization leader / anthropology researcher
+- Be analytical and evidence-based, not vague`;
+}
+
+function setAiQuestion(text) {
+  document.getElementById('aiQuestion').value = text;
+  document.getElementById('aiQuestion').focus();
+}
+
+function clearAiChat() {
+  aiChatHistory = [];
+  document.getElementById('aiResponse').innerHTML = '';
+  document.getElementById('aiHistory').innerHTML = '';
+  document.getElementById('aiQuestion').value = '';
+}
+
+async function sendAiQuestion() {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    alert('APIキーが設定されていません。Scoring WeightsタブでAnthropic APIキーを設定してください。');
+    return;
+  }
+
+  const question = document.getElementById('aiQuestion').value.trim();
+  if (!question) return;
+
+  const responseEl = document.getElementById('aiResponse');
+  const historyEl = document.getElementById('aiHistory');
+  const sendBtn = document.getElementById('aiSendBtn');
+
+  // Move previous response to history
+  if (responseEl.innerHTML) {
+    historyEl.innerHTML = responseEl.innerHTML + historyEl.innerHTML;
+  }
+
+  // Show user message and loading
+  responseEl.innerHTML = `
+    <div class="ai-message user">
+      <div class="msg-label">You</div>
+      ${escapeHtml(question)}
+    </div>
+    <div class="ai-loading">
+      <span>Analyzing research data</span><span class="ai-loading-dots"></span>
+    </div>
+  `;
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Analyzing...';
+  document.getElementById('aiQuestion').value = '';
+
+  // Build messages array with conversation history
+  aiChatHistory.push({ role: 'user', content: question });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6-20250514',
+        max_tokens: 4096,
+        system: buildSystemPrompt(),
+        messages: aiChatHistory
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.content[0].text;
+
+    aiChatHistory.push({ role: 'assistant', content: assistantMessage });
+
+    // Render response with basic markdown-like formatting
+    responseEl.innerHTML = `
+      <div class="ai-message user">
+        <div class="msg-label">You</div>
+        ${escapeHtml(question)}
+      </div>
+      <div class="ai-message assistant">
+        <div class="msg-label">AI Analysis</div>
+        ${formatAiResponse(assistantMessage)}
+      </div>
+    `;
+  } catch (error) {
+    responseEl.innerHTML = `
+      <div class="ai-message user">
+        <div class="msg-label">You</div>
+        ${escapeHtml(question)}
+      </div>
+      <div class="ai-message assistant" style="border-color:#fca5a5;background:#fef2f2;">
+        <div class="msg-label" style="color:#dc2626;">Error</div>
+        ${escapeHtml(error.message)}
+      </div>
+    `;
+    // Remove failed message from history
+    aiChatHistory.pop();
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatAiResponse(text) {
+  // Basic formatting: bold, headers, lists
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<div style="font-size:14px;font-weight:700;margin:12px 0 6px;">$1</div>')
+    .replace(/^## (.+)$/gm, '<div style="font-size:15px;font-weight:700;margin:16px 0 8px;">$1</div>')
+    .replace(/^# (.+)$/gm, '<div style="font-size:16px;font-weight:700;margin:20px 0 10px;">$1</div>')
+    .replace(/^- (.+)$/gm, '<div style="padding-left:16px;position:relative;"><span style="position:absolute;left:4px;">-</span>$1</div>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="padding-left:20px;position:relative;"><span style="position:absolute;left:0;font-weight:600;">$1.</span>$2</div>')
+    .replace(/\n/g, '<br>');
+}
+
+// Initialize API key status on load
+function initAiSettings() {
+  updateApiKeyStatus();
+  // Allow Enter+Ctrl/Cmd to send
+  document.getElementById('aiQuestion')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      sendAiQuestion();
+    }
   });
 }
 </script>
