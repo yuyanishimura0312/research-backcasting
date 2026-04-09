@@ -889,6 +889,13 @@ fetch('data/research_themes.json')
   .then(data => {
     DATA = data;
     init();
+  })
+  .catch(err => {
+    const container = document.getElementById('themeList');
+    if (container) {
+      container.innerHTML = `<div style="padding:24px;color:#dc2626;font-size:14px;">データの読み込みに失敗しました。ページを再読み込みしてください。<br><small style="color:#9ca3af;">(${err.message})</small></div>`;
+    }
+    console.error('Failed to load research_themes.json:', err);
   });
 
 function init() {
@@ -967,6 +974,9 @@ function renderThemeList() {
   const container = document.getElementById('themeList');
   const themes = getFilteredThemes();
 
+  // Reset expanded state since DOM is fully rebuilt
+  expandedTheme = null;
+
   container.innerHTML = themes.map((t, i) => `
     <div class="theme-item" onclick="toggleThemeDetail(${t.id})">
       <div class="rank">${i + 1}</div>
@@ -975,12 +985,12 @@ function renderThemeList() {
       </div>
       <div class="theme-content">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <span class="panel-title">${t.themeName}</span>
+          <span class="panel-title">${escapeHtml(t.themeName)}</span>
           <span class="badge badge-domain">Domain ${t.domainNo}</span>
-          <span class="badge badge-map">${t.mapTheme}</span>
+          <span class="badge badge-map">${escapeHtml(t.mapTheme)}</span>
         </div>
         <div class="panel-meta" style="margin-top:4px;">
-          ${t.domainName} / Cards: ${t.cardCount} / ${t.earliestYear}~${t.latestYear}
+          ${escapeHtml(t.domainName)} / Cards: ${t.cardCount} / ${t.earliestYear}~${t.latestYear}
         </div>
         <div class="score-bar-container">
           <span class="score-label">Urgency</span>
@@ -1004,7 +1014,7 @@ function renderThemeList() {
         </div>
         ${t.subTopics.length ? `
           <div class="sub-topics">
-            ${t.subTopics.map(s => `<span class="sub-topic">${s}</span>`).join('')}
+            ${t.subTopics.map(s => `<span class="sub-topic">${escapeHtml(s)}</span>`).join('')}
           </div>
         ` : ''}
         <div id="detail-${t.id}" class="${expandedTheme === t.id ? '' : 'hidden'}">
@@ -1015,12 +1025,12 @@ function renderThemeList() {
             <div class="backcast-flow" style="margin:12px 0;">
               <div class="backcast-node future">
                 <div class="backcast-node-label">${t.latestYear}</div>
-                <div class="backcast-node-text" style="font-size:11px;">${t.summaries[0] || t.themeName}</div>
+                <div class="backcast-node-text" style="font-size:11px;">${escapeHtml(t.summaries[0] || t.themeName)}</div>
               </div>
               <div class="backcast-arrow">&larr;</div>
               <div class="backcast-node">
                 <div class="backcast-node-label">Required by ${t.earliestYear}</div>
-                <div class="backcast-node-text" style="font-size:11px;">${t.themeName}</div>
+                <div class="backcast-node-text" style="font-size:11px;">${escapeHtml(t.themeName)}</div>
               </div>
               <div class="backcast-arrow">&larr;</div>
               <div class="backcast-node now">
@@ -1032,18 +1042,18 @@ function renderThemeList() {
               <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
                 Related domains: ${t.relatedDomains.map(d => {
                   const dom = DATA.domains.find(dd => dd.no === d);
-                  return dom ? dom.name : `#${d}`;
+                  return dom ? escapeHtml(dom.name) : `#${d}`;
                 }).join(', ')}
               </div>
             ` : ''}
             ${t.sourceBooks.length ? `
               <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                Sources: ${t.sourceBooks.map(b => DATA.books[b] ? DATA.books[b].title.slice(0, 30) : b).join(' / ')}
+                Sources: ${t.sourceBooks.map(b => DATA.books[b] ? escapeHtml(DATA.books[b].title.slice(0, 30)) : escapeHtml(String(b))).join(' / ')}
               </div>
             ` : ''}
             ${t.summaries.length ? `
               <div class="summaries">
-                ${t.summaries.map(s => `<div class="summary-item">${s}</div>`).join('')}
+                ${t.summaries.map(s => `<div class="summary-item">${escapeHtml(s)}</div>`).join('')}
               </div>
             ` : ''}
           </div>
@@ -1065,14 +1075,14 @@ function renderDomainGrid() {
 
   grid.innerHTML = DATA.domains.map(d => `
     <div class="domain-card ${d.themeCount === 0 ? 'dimmed' : ''}" data-no="${d.no}" onclick="showDomainDetail(${d.no})">
-      <div class="domain-no">Domain ${d.no} / ${d.mapTheme}</div>
-      <div class="domain-name">${d.name}</div>
+      <div class="domain-no">Domain ${d.no} / ${escapeHtml(d.mapTheme)}</div>
+      <div class="domain-name">${escapeHtml(d.name)}</div>
       <div class="domain-stats">
         <span>Cards: ${d.cardCount}</span>
         <span>Themes: ${d.themeCount}</span>
         <span>Avg Score: ${d.avgBackcastingScore}</span>
       </div>
-      ${d.topTheme ? `<div style="font-size:11px;color:var(--accent);margin-top:6px;">Top: ${d.topTheme} (${d.topThemeScore})</div>` : d.themeCount === 0 ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Research themes not yet extracted</div>` : ''}
+      ${d.topTheme ? `<div style="font-size:11px;color:var(--accent);margin-top:6px;">Top: ${escapeHtml(d.topTheme)} (${d.topThemeScore})</div>` : d.themeCount === 0 ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Research themes not yet extracted</div>` : ''}
       <div class="domain-score-bar">
         <div class="domain-score-fill" style="width:${maxScore > 0 ? (d.avgBackcastingScore / maxScore * 100) : 0}%"></div>
       </div>
@@ -1090,18 +1100,18 @@ function showDomainDetail(no) {
   document.querySelector(`.domain-card[data-no="${no}"]`)?.classList.add('active');
 
   if (!themes.length) {
-    detail.innerHTML = `<div class="panel"><div class="panel-title">${domain.name}</div><p style="color:var(--text-muted);font-size:13px;margin-top:8px;">This domain has no extracted research themes.</p></div>`;
+    detail.innerHTML = `<div class="panel"><div class="panel-title">${escapeHtml(domain.name)}</div><p style="color:var(--text-muted);font-size:13px;margin-top:8px;">This domain has no extracted research themes.</p></div>`;
     detail.classList.remove('hidden');
     return;
   }
 
   detail.innerHTML = `
-    <div class="section-title">${domain.name} - Research Themes</div>
+    <div class="section-title">${escapeHtml(domain.name)} - Research Themes</div>
     ${themes.sort((a, b) => b.backcastingScore - a.backcastingScore).map(t => `
       <div class="panel">
         <div class="panel-header">
           <div>
-            <div class="panel-title">${t.themeName}</div>
+            <div class="panel-title">${escapeHtml(t.themeName)}</div>
             <div class="panel-meta">${t.earliestYear}~${t.latestYear} / ${t.cardCount} cards</div>
           </div>
           <div class="overall-score ${t.backcastingScore >= 50 ? 'high' : t.backcastingScore >= 25 ? 'mid' : 'low'}">
@@ -1130,12 +1140,12 @@ function showDomainDetail(no) {
         </div>
         ${t.subTopics.length ? `
           <div class="sub-topics">
-            ${t.subTopics.map(s => `<span class="sub-topic">${s}</span>`).join('')}
+            ${t.subTopics.map(s => `<span class="sub-topic">${escapeHtml(s)}</span>`).join('')}
           </div>
         ` : ''}
         ${t.summaries.length ? `
           <div class="summaries">
-            ${t.summaries.map(s => `<div class="summary-item">${s}</div>`).join('')}
+            ${t.summaries.map(s => `<div class="summary-item">${escapeHtml(s)}</div>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -1224,8 +1234,8 @@ function renderTimeline() {
           ${themes.map(t => `
             <div class="timeline-item">
               <div class="timeline-item-year" style="color:${isPast ? '#dc2626' : 'var(--accent)'};">Score ${t.backcastingScore}</div>
-              <div class="timeline-item-name">${t.themeName}</div>
-              <span class="badge badge-domain">${t.domainName}</span>
+              <div class="timeline-item-name">${escapeHtml(t.themeName)}</div>
+              <span class="badge badge-domain">${escapeHtml(t.domainName)}</span>
               <div style="font-size:11px;color:var(--text-muted);">${t.cardCount} cards</div>
             </div>
           `).join('')}
@@ -1512,7 +1522,7 @@ async function sendAiQuestion() {
     }
 
     const data = await response.json();
-    const assistantMessage = data.content[0].text;
+    const assistantMessage = data.content?.[0]?.text || 'No response';
 
     aiChatHistory.push({ role: 'assistant', content: assistantMessage });
 
@@ -1566,13 +1576,6 @@ function formatAiResponse(text) {
 
 // Initialize API key status on load
 function initAiSettings() {
-  // Auto-set API key from URL hash (one-time, then clear hash)
-  const hash = window.location.hash;
-  if (hash.startsWith('#key=')) {
-    const key = decodeURIComponent(hash.slice(5));
-    localStorage.setItem('anthropic_api_key', key);
-    history.replaceState(null, '', window.location.pathname);
-  }
   updateApiKeyStatus();
   // Allow Enter+Ctrl/Cmd to send
   document.getElementById('aiQuestion')?.addEventListener('keydown', (e) => {
